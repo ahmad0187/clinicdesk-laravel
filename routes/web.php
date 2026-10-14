@@ -1,0 +1,34 @@
+<?php
+
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\StaffController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'show'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:20,1');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::get('/', DashboardController::class)->name('dashboard');
+
+    Route::resource('patients', PatientController::class);
+
+    Route::resource('appointments', AppointmentController::class)->except(['show', 'destroy']);
+    Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
+
+    Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('/invoices/{invoice}/pay', [InvoiceController::class, 'markPaid'])->name('invoices.pay');
+    Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
+
+    Route::resource('staff', StaffController::class)->except(['show', 'destroy'])->parameters(['staff' => 'staff']);
+    Route::resource('services', ServiceController::class)->only(['index', 'store', 'update']);
+    Route::get('/activity', ActivityLogController::class)->name('activity');
+});
